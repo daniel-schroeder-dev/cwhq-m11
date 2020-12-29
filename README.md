@@ -398,6 +398,6 @@ Once that finishes, a window should open with the `start` button, like this:
 
 Click that button, and you should see the glorious "Hello, world!":
 
-![hello world](hello-world.png)
+![hello world](hello-world.gif)
 
 That's it! Now, everytime you want to add a module, you need to run the `build.py` file. Everytime you make a change to `index.py`, you can just run the `create_output.py` file.
