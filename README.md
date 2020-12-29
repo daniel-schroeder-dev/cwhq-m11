@@ -236,3 +236,41 @@ var prog = `{prog}`;
 </html>
 ''')
 ```
+OK, at this point, we're close! Now, we need to wire up the build script that will build our Skulpt modules and include the `skulpt.min.js` files and `skulpt-stdlib.js` files in our M11 directory.
+
+Create a file called `build.py` and give it execute permissions:
+
+```bash
+➜  m11 touch build.py
+➜  m11 chmod +x build.py
+```
+
+Drop this code in `build.py` and replace `skulpt_dir_path` with the result of running `pwd` in your `skulpt` directory:
+
+```python
+#!/usr/bin/python
+
+import subprocess
+import os
+
+skulpt_dir_path = "/home/daniel/Public/cwhq/src/skulpt/"
+skulpt_dist_path = os.path.join(skulpt_dir_path, "dist")
+
+skulpt_lib_files = [
+    "skulpt.min.js",
+    "skulpt-stdlib.js",
+    "skulpt.min.js.map",
+]
+
+subprocess.call(["npm","run", "build"], cwd=skulpt_dir_path)
+
+for skulpt_lib_file in skulpt_lib_files:
+    subprocess.call(["cp", os.path.join(skulpt_dist_path, skulpt_lib_file), "./"])
+
+subprocess.call(["python", "create_output.py"])
+subprocess.call(["python", "-m", "webbrowser", "-t", "http://127.0.0.1:8000/"])
+
+```
+Now, fire up the python server:
+
+```bash
