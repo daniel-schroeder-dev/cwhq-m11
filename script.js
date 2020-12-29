@@ -24,6 +24,7 @@ function regexCheck (el) {
 // get a reference to your element for output
 // configure the output function
 // call Sk.importMainWithBody()
+// I've set this to use python3 with that __future__ option
 function runit() {
 	document.getElementById("start-button").remove();
 	var outputElement = document.getElementById("output"); 
