@@ -196,6 +196,15 @@ We'll do all of our work in an `index.py` file, so create one:
 ➜  m11 touch index.py
 ```
 
+We can use our `add_text()` function here, let's do the standard "Hello, world!" in `index.py`. We need to import our module before using any
+functions from it:
+
+```python
+from wizardlib.builtins import *
+
+add_text("Hello, world!")
+```
+
 Next, we need the file that will build the HTML we will view in the browser. Create a file called `create_output.py`:
 
 ```bash
@@ -236,7 +245,106 @@ var prog = `{prog}`;
 </html>
 ''')
 ```
-OK, at this point, we're close! Now, we need to wire up the build script that will build our Skulpt modules and include the `skulpt.min.js` files and `skulpt-stdlib.js` files in our M11 directory.
+OK, at this point, we're close! Go ahead and run `create_output.py` to see what it does:
+
+```bash
+➜  m11 python create_output.py
+``` 
+
+You should see an `index.html` file in your directory with this content:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title></title>
+  <script src="skulpt.min.js" type="text/javascript"></script> 
+  <script src="skulpt-stdlib.js" type="text/javascript"></script> 
+  <script>
+var prog = `from wizardlib.builtins import *
+
+add_text("Hello, world!")
+`;
+// output functions are configurable.  This one just adds some text
+// to the output element
+function outf(text) { 
+    var outputElement = document.getElementById("output"); 
+    outputElement.innerHTML = text; 
+} 
+function builtinRead(x) {
+    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+            throw "File not found: '" + x + "'";
+    return Sk.builtinFiles["files"][x];
+}
+
+function regexCheck (el) {
+    var found = el.match(/.*(var).*(prog).*(=)/g);
+    if(found){
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
+// Here's everything you need to run a python program in skulpt
+// get a reference to your element for output
+// configure the output function
+// call Sk.importMainWithBody()
+// I've set this to use python3 with that __future__ option
+function runit() {
+	document.getElementById("start-button").remove();
+	var outputElement = document.getElementById("output"); 
+	outputElement.innerHTML = ''; 
+	Sk.pre = "output";
+	Sk.configure({output:outf, read:builtinRead, __future__: Sk.python3}); 
+	var myPromise = Sk.misceval.asyncToPromise(function() {
+	   return Sk.importMainWithBody("<stdin>", false, prog, true);
+	});
+	myPromise.then(function(mod) {
+	   console.log('success');
+	}, function(err) {
+			var entireFile = document.querySelector('html').innerHTML;
+			var fileArray = entireFile.split('\n');
+			var errorLine = err.traceback[0].lineno;
+			var errorMessage = document.getElementById('errorMessage');
+
+			// YES, that space is supposed to be there
+			errorMessage.textContent = ` ${err.args.v[0].v} on line no ${errorLine}`;
+			errorMessage.style.cssText = `
+			   background-color: #c0392b;
+			   color: white;
+			   padding: 24px;
+			   position: absolute;
+			   border-radius: 10px;
+			   font-size: 18px;
+			   font-family: monospace;
+			   display: block;
+			   max-width: 500px;
+			   text-align: center;
+			   right: calc(50vw - 250px);
+			   z-index: 10;
+			   line-height: 1.5;
+			   top: 10px;
+		`;
+	});
+} 
+
+
+
+  </script>
+</head>
+<body>
+<div id="errorMessage"></div>
+<div id="output"></div>
+<button id="start-button" onclick="runit();">Start</button>
+</body>
+</html>
+```
+
+Now, we need to wire up the build script that will build our Skulpt modules and include the `skulpt.min.js` files and `skulpt-stdlib.js` files in our M11 directory.
 
 Create a file called `build.py` and give it execute permissions:
 
@@ -274,3 +382,22 @@ subprocess.call(["python", "-m", "webbrowser", "-t", "http://127.0.0.1:8000/"])
 Now, fire up the python server:
 
 ```bash
+➜  m11 python server.py 
+Server up at port:  8000
+```
+
+Open a new shell, and run the `build.py` script:
+
+```bash
+➜  m11 ./build.py
+```
+
+Once that finishes, a window should open with the `start` button, like this:
+
+![start button](start-button.png)
+
+Click that button, and you should see the glorious "Hello, world!":
+
+![hello world](hello-world.png)
+
+That's it! Now, everytime you want to add a module, you need to run the `build.py` file. Everytime you make a change to `index.py`, you can just run the `create_output.py` file.
